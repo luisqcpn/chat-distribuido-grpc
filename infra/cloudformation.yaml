@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Servidor gRPC para Chat Distribuído"
+
+Parameters:
+  KeyName:
+    Description: "Nome da chave SSH (criada no AWS Academy) para acesso à instância"
+    Type: "AWS::EC2::KeyPair::KeyName"
+
+Resources:
+
+  ChatVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: ChatVPC
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ChatVPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs '']
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref ChatVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref ChatVPC
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref RouteTable
+
+  ChatSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Permitir gRPC (50051) e SSH (22)"
+      VpcId: !Ref ChatVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 50051
+          ToPort: 50051
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  ChatEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-053b0d53c279acc90  # Amazon Linux 2 (região us-east-1)
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref ChatSecurityGroup
+      Tags:
+        - Key: Name
+          Value: ChatServer
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y python3 unzip git
+          pip3 install grpcio grpcio-tools
+
+          cd /home/ec2-user
+          aws s3 cp s3://projeto-chat-servidor/chat_server_package.zip chat_server_package.zip
+          unzip chat_server_package.zip
+          cd chat_server_package
+          nohup python3 chat_server.py > server.log 2>&1 &
