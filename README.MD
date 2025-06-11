@@ -27,6 +27,7 @@ Provisionamento automatizado da infraestrutura via YAML (CloudFormation)
 Deploy automatizado com clonagem do repositório direto da EC2
 
 📂 Estrutura do Projeto
+
 chat-distribuido-grpc/
 ├── client/
 │   └── chat_client.py
