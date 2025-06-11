@@ -1,4 +1,4 @@
-Chat Distribuído com gRPC na AWS
+##Chat Distribuído com gRPC na AWS
 
 Projeto desenvolvido para a disciplina de Computação em Nuvem, com o objetivo de criar um sistema de chat distribuído usando gRPC, provisionamento via AWS CloudFormation e hospedação em uma instância EC2.
 
