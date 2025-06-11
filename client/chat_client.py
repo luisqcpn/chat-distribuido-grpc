@@ -23,7 +23,7 @@ def listen_for_messages(stream):
 
 
 def main():
-    channel = grpc.insecure_channel('44.210.136.209:50051')
+    channel = grpc.insecure_channel('44.210.116.70:50051')
     stub = chat_pb2_grpc.ChatServiceStub(channel)
 
     username = input("Digite seu nome de usuário: ")

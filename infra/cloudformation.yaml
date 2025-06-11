@@ -3,7 +3,7 @@ Description: "Servidor gRPC para Chat Distribuído"
 
 Parameters:
   KeyName:
-    Description: "Nome da chave SSH (criada no AWS Academy) para acesso à instância"
+    Description: "Nome da chave SSH"
     Type: "AWS::EC2::KeyPair::KeyName"
 
 Resources:
@@ -85,11 +85,10 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash
           yum update -y
-          yum install -y python3 unzip git
+          yum install -y python3 git unzip
           pip3 install grpcio grpcio-tools
 
           cd /home/ec2-user
-          aws s3 cp s3://projeto-chat-servidor/chat_server_package.zip chat_server_package.zip
-          unzip chat_server_package.zip
-          cd chat_server_package
+          git clone https://github.com/luisqcqn/chat-distribuido-grpc.git
+          cd chat-distribuido-grpc/server
           nohup python3 chat_server.py > server.log 2>&1 &
